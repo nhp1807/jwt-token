@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "_user")
+@Table(name = "users")
 public class User implements UserDetails {
     @Id
     @GeneratedValue()
@@ -27,6 +27,13 @@ public class User implements UserDetails {
     private String lastName;
     private String email;
     private String password;
+    
+    // Google OAuth2 fields
+    private String googleId;
+    private String provider; // "GOOGLE" or "LOCAL"
+    private String profilePicture;
+    private boolean emailVerified;
+    
     @Enumerated(EnumType.STRING)
     private Role role;
 

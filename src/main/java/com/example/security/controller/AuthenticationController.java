@@ -3,8 +3,10 @@ package com.example.security.controller;
 import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RefreshTokenRequest;
 import com.example.security.dto.request.RegisterRequest;
+import com.example.security.dto.request.GoogleAuthRequest;
 import com.example.security.dto.response.AuthenticationResponse;
 import com.example.security.service.AuthenticationService;
+import com.example.security.service.GoogleAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
     @Autowired
     private AuthenticationService service;
+    
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
@@ -30,6 +35,14 @@ public class AuthenticationController {
             @RequestBody AuthenticationRequest request
     ) {
         return service.authenticate(request);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthenticationResponse> authenticateWithGoogle(
+            @RequestBody GoogleAuthRequest request
+    ) {
+        AuthenticationResponse response = googleAuthService.authenticateWithGoogle(request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh-token")

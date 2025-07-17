@@ -9,12 +9,19 @@ Hệ thống xác thực JWT (JSON Web Token) với Access Token và Refresh Tok
 - **Role-based Authorization** (USER, ADMIN)
 - **Password Encryption** với BCrypt
 - **Stateless Session Management**
+- **Google OAuth2 Login**: Đăng nhập bằng tài khoản Google
 
 ### ✅ Bảo mật nâng cao
-- **Refresh Token Rotation** khi đăng nhập lại
+- **Refresh Token Rotation** khi đăng nhập lại (bao gồm cả đăng nhập Google)
 - **Token Storage** trong database để có thể revoke
 - **Automatic Token Cleanup** (scheduled task)
 - **Comprehensive Error Handling** với thông báo tiếng Việt
+
+### ✅ Token Management
+- **Access Token**: Hết hạn sau 15 phút
+- **Refresh Token**: Hết hạn sau 7 ngày
+- **Token Storage**: Refresh token được lưu trong database
+- **Token Rotation**: Refresh token được thay đổi khi đăng nhập lại (bao gồm cả đăng nhập Google). Khi đăng nhập Google, hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới, đảm bảo mỗi user chỉ có 1 refresh token hợp lệ.
 
 ### ✅ API Endpoints
 - **Đăng ký tài khoản** (`POST /api/v1/auth/register`)
@@ -106,7 +113,26 @@ Content-Type: application/json
 }
 ```
 
-#### 3. Refresh Token
+#### 3. Đăng nhập bằng Google
+```http
+POST /api/v1/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "<Google_ID_Token>"
+}
+```
+**Chú ý:** Khi đăng nhập bằng Google, hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới.
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+#### 4. Refresh Token
 ```http
 POST /api/v1/auth/refresh-token
 Content-Type: application/json
@@ -124,7 +150,7 @@ Content-Type: application/json
 }
 ```
 
-#### 4. Logout
+#### 5. Logout
 ```http
 POST /api/v1/auth/logout
 Content-Type: application/json
@@ -158,7 +184,7 @@ Authorization: Bearer <access_token>
 - **Access Token**: Hết hạn sau 15 phút
 - **Refresh Token**: Hết hạn sau 7 ngày
 - **Token Storage**: Refresh token được lưu trong database
-- **Token Rotation**: Refresh token được thay đổi khi đăng nhập lại
+- **Token Rotation**: Refresh token được thay đổi khi đăng nhập lại (bao gồm cả đăng nhập Google). Khi đăng nhập Google, hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới, đảm bảo mỗi user chỉ có 1 refresh token hợp lệ.
 
 ### Error Handling
 Hệ thống trả về thông báo lỗi chi tiết bằng tiếng Việt:
@@ -225,10 +251,10 @@ src/main/java/com/example/security/
 
 ## 🔄 Luồng hoạt động
 
-### 1. Đăng ký/Đăng nhập
-1. User gửi credentials
+### 1. Đăng ký/Đăng nhập/Đăng nhập Google
+1. User gửi credentials hoặc Google ID token
 2. Server xác thực và tạo access token + refresh token
-3. Refresh token được lưu vào database
+3. Nếu là đăng nhập lại (bao gồm Google), refresh token cũ sẽ bị xóa khỏi database, chỉ giữ lại refresh token mới nhất
 4. Server trả về cả 2 token
 
 ### 2. Sử dụng API
