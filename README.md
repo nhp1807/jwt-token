@@ -246,7 +246,7 @@ src/main/java/com/example/security/
 ```
 
 ### Database Schema
-- **`_user`**: Thông tin người dùng
+- **`users`**: Thông tin người dùng
 - **`refresh_tokens`**: Refresh token storage
 
 ## 🔄 Luồng hoạt động
