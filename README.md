@@ -309,17 +309,39 @@ curl -X GET http://localhost:8080/api/v1/demo-controller \
 
 ## 📝 Cấu hình
 
-### JWT Configuration
-- **Secret Key**: Base64 encoded trong `JwtService.java`
-- **Access Token Expiration**: 15 phút
-- **Refresh Token Expiration**: 7 ngày
-- **Algorithm**: HS256
+### 1. File cấu hình `application.properties`
+Tạo file `src/main/resources/application.properties` với nội dung ví dụ:
 
-### Database Configuration
-- **Auto Create/Drop**: `spring.jpa.hibernate.ddl-auto=update`
-- **Show SQL**: `spring.jpa.show-sql=true`
-- **Dialect**: MySQL8Dialect
+```properties
+# Thông tin database
+spring.datasource.url=jdbc:mysql://localhost:3306/jwt_security
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
 
-### Scheduled Tasks
-- **Token Cleanup**: Chạy mỗi ngày lúc 2:00 AM
-- **Purpose**: Xóa refresh token hết hạn
+# JWT Secret (Base64 encoded)
+jwt.secret=YOUR_BASE64_SECRET_KEY
+
+# Google OAuth2 Configuration
+# KHÔNG commit client-secret lên git!
+google.oauth2.client-id=YOUR_GOOGLE_CLIENT_ID
+google.oauth2.client-secret=YOUR_GOOGLE_CLIENT_SECRET
+google.oauth2.redirect-uri=http://localhost:8080/api/v1/auth/google/callback
+```
+
+**Lưu ý bảo mật:**
+- KHÔNG commit `google.oauth2.client-secret` hoặc thông tin nhạy cảm lên git.
+- Nên thêm `src/main/resources/application.properties` vào `.gitignore`.
+- Khi deploy, sử dụng biến môi trường hoặc file cấu hình riêng cho secret.
+
+### 2. Cấu hình biến môi trường (tùy chọn)
+Bạn có thể truyền các giá trị nhạy cảm qua biến môi trường khi chạy ứng dụng:
+```sh
+mvn spring-boot:run -Dspring-boot.run.arguments="--google.oauth2.client-secret=YOUR_SECRET"
+```
+
+### 3. Tạo file cấu hình local (không commit)
+Tạo file `application-local.properties` (không commit lên git) để lưu thông tin nhạy cảm khi phát triển local.
