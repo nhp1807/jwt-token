@@ -320,16 +320,21 @@ spring.datasource.password=your_password
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+spring.jpa.database=mysql
 spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
 
 # JWT Secret (Base64 encoded)
 jwt.secret=YOUR_BASE64_SECRET_KEY
 
 # Google OAuth2 Configuration
-# KHÔNG commit client-secret lên git!
 google.oauth2.client-id=YOUR_GOOGLE_CLIENT_ID
 google.oauth2.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 google.oauth2.redirect-uri=http://localhost:8080/api/v1/auth/google/callback
+
+# Token expiration time
+token.access-token-expiration=90000 # 15 phút
+token.refresh-token-expiration=60480000 # 7 ngày
 ```
 
 **Lưu ý bảo mật:**
