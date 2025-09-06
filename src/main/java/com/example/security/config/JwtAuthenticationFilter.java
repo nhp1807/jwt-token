@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.security.dto.response.ErrorResponse;
+import com.example.security.cache.AccessTokenCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -31,7 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtService jwtService;
     @Autowired
     private UserDetailsService userDetailsService;
-
+    @Autowired
+    private AccessTokenCache accessTokenCache;
+    
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -63,6 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             userEmail = jwtService.extractUsername(jwt);
+
+            if (accessTokenCache.get(userEmail) == null) {
+                sendErrorResponse(response, "Token không hợp lệ hoặc đã hết hạn", HttpStatus.UNAUTHORIZED);
+                return;
+            }
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);

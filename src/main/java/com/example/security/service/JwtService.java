@@ -20,11 +20,12 @@ import java.util.function.Function;
 public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
-    
-    // Access token expires in 15 minutes
-    private static final long ACCESS_TOKEN_EXPIRATION = 100 * 60 * 15; // 15 minutes
-    // Refresh token expires in 7 days
-    private static final long REFRESH_TOKEN_EXPIRATION = 100 * 60 * 60 * 24 * 7; // 7 days
+
+    @Value("${token.access-token-expiration}")
+    private long ACCESS_TOKEN_EXPIRATION;
+
+    @Value("${token.refresh-token-expiration}")
+    private long REFRESH_TOKEN_EXPIRATION;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

@@ -9,7 +9,10 @@ import com.example.security.model.User;
 import com.example.security.repository.UserRepository;
 import com.example.security.model.RefreshToken;
 import com.example.security.repository.RefreshTokenRepository;
+import com.example.security.cache.AccessTokenCache;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,6 +35,11 @@ public class AuthenticationService {
     private JwtService jwtService;
     @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private AccessTokenCache accessTokenCache;
+
+    @Value("${token.refresh-token-expiration}")
+    private long REFRESH_TOKEN_EXPIRATION;
 
     @Transactional
     public ResponseEntity<AuthenticationResponse> register(RegisterRequest request) {
@@ -55,6 +63,8 @@ public class AuthenticationService {
 
         // Save refresh token to database
         saveRefreshToken(refreshToken, user);
+
+        accessTokenCache.put(user.getEmail(), accessToken);
 
         return ResponseEntity.ok(AuthenticationResponse.builder()
                 .accessToken(accessToken)
@@ -81,6 +91,8 @@ public class AuthenticationService {
         // Save refresh token to database
         saveRefreshToken(refreshToken, user);
 
+        accessTokenCache.put(user.getEmail(), accessToken);
+
         return ResponseEntity.ok(AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -93,7 +105,7 @@ public class AuthenticationService {
         final String userEmail = jwtService.extractUsername(refreshToken);
 
         if (userEmail != null) {
-            UserDetails userDetails = repository.findByEmail(userEmail)
+            User userDetails = repository.findByEmail(userEmail)
                     .orElseThrow();
 
             // Check if refresh token exists in database
@@ -104,6 +116,8 @@ public class AuthenticationService {
 
                 // Only generate new access token, keep the same refresh token
                 String accessToken = jwtService.generateAccessToken(userDetails);
+
+                accessTokenCache.put(userDetails.getEmail(), accessToken);
 
                 return ResponseEntity.ok(AuthenticationResponse.builder()
                         .accessToken(accessToken)
@@ -123,14 +137,17 @@ public class AuthenticationService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(token)
                 .user(user)
-                .expiryDate(Instant.now().plusSeconds(7 * 24 * 60 * 60)) // 7 days
+                .expiryDate(Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION/100)) // 7 days
                 .build();
         refreshTokenRepository.save(refreshToken);
     }
 
     @Transactional
     public void logout(String refreshToken) {
-        refreshTokenRepository.findByToken(refreshToken)
-                .ifPresent(refreshTokenRepository::delete);
+        User user = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new RuntimeException("Refresh token not found in database"))
+                .getUser();
+        refreshTokenRepository.deleteByUserId(user.getId());
+        accessTokenCache.invalidate(user.getEmail());
     }
 }
