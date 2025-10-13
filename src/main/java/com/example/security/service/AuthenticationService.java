@@ -54,7 +54,7 @@ public class AuthenticationService {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.USER);
+        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
 
         repository.save(user);
 
@@ -93,10 +93,19 @@ public class AuthenticationService {
 
         accessTokenCache.put(user.getEmail(), accessToken);
 
-        return ResponseEntity.ok(AuthenticationResponse.builder()
+        AuthenticationResponse.UserData userData = new AuthenticationResponse.UserData();
+        userData.setUserId(user.getId());
+        userData.setRole(user.getRole().name());
+        userData.setEmail(user.getEmail());
+        userData.setFullName(user.getFirstName() + " " + user.getLastName());
+
+        AuthenticationResponse response = AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .build());
+                .user(userData)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @Transactional
@@ -130,7 +139,7 @@ public class AuthenticationService {
     }
 
     @Transactional
-    private void saveRefreshToken(String token, User user) {
+    public void saveRefreshToken(String token, User user) {
         // Delete existing refresh token for this user first
         refreshTokenRepository.deleteByUserId(user.getId());
 

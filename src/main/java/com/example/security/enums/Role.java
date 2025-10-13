@@ -1,6 +1,10 @@
 package com.example.security.enums;
 
 public enum Role {
-    USER,
-    ADMIN
+    EDITORIAL,
+    ACCOUNT,
+    BRAND,
+    SALE,
+    BTVLEAD,
+    BTV
 }
