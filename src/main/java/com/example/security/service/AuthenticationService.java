@@ -66,10 +66,19 @@ public class AuthenticationService {
 
         accessTokenCache.put(user.getEmail(), accessToken);
 
-        return ResponseEntity.ok(AuthenticationResponse.builder()
+        AuthenticationResponse.UserData userData = new AuthenticationResponse.UserData();
+        userData.setUserId(user.getId());
+        userData.setRole(user.getRole().name());
+        userData.setEmail(user.getEmail());
+        userData.setFullName(user.getFirstName() + " " + user.getLastName());
+
+        AuthenticationResponse response = AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .build());
+                .user(userData)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @Transactional

@@ -24,6 +24,7 @@ public class AccessTokenCache {
             });
 
     public void put(String email, String accessToken) {
+        log.info("Storing access token for user ID: {}", email);
         accessTokenCache.put(email, accessToken);
     }
 
