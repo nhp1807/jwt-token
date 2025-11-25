@@ -10,9 +10,10 @@ Hệ thống xác thực JWT (JSON Web Token) với Access Token và Refresh Tok
 - **Password Encryption** với BCrypt
 - **Stateless Session Management**
 - **Google OAuth2 Login**: Đăng nhập bằng tài khoản Google
+- **Facebook OAuth2 Login**: Đăng nhập bằng tài khoản Facebook
 
 ### ✅ Bảo mật nâng cao
-- **Refresh Token Rotation** khi đăng nhập lại (bao gồm cả đăng nhập Google)
+- **Refresh Token Rotation** khi đăng nhập lại (bao gồm cả đăng nhập Google và Facebook)
 - **Token Storage** trong database để có thể revoke
 - **Automatic Token Cleanup** (scheduled task)
 - **Comprehensive Error Handling** với thông báo tiếng Việt
@@ -26,6 +27,8 @@ Hệ thống xác thực JWT (JSON Web Token) với Access Token và Refresh Tok
 ### ✅ API Endpoints
 - **Đăng ký tài khoản** (`POST /api/v1/auth/register`)
 - **Đăng nhập** (`POST /api/v1/auth/authenticate`)
+- **Đăng nhập bằng Google** (`POST /api/v1/auth/google`)
+- **Đăng nhập bằng Facebook** (`POST /api/v1/auth/facebook`)
 - **Refresh Token** (`POST /api/v1/auth/refresh-token`)
 - **Logout** (`POST /api/v1/auth/logout`)
 - **Demo API** (`GET /api/v1/demo-controller`)
@@ -132,7 +135,26 @@ Content-Type: application/json
 }
 ```
 
-#### 4. Refresh Token
+#### 4. Đăng nhập bằng Facebook
+```http
+POST /api/v1/auth/facebook
+Content-Type: application/json
+
+{
+  "accessToken": "<Facebook_Access_Token>"
+}
+```
+**Chú ý:** Khi đăng nhập bằng Facebook, hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới.
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+#### 5. Refresh Token
 ```http
 POST /api/v1/auth/refresh-token
 Content-Type: application/json
@@ -150,7 +172,7 @@ Content-Type: application/json
 }
 ```
 
-#### 5. Logout
+#### 6. Logout
 ```http
 POST /api/v1/auth/logout
 Content-Type: application/json
@@ -184,7 +206,7 @@ Authorization: Bearer <access_token>
 - **Access Token**: Hết hạn sau 15 phút
 - **Refresh Token**: Hết hạn sau 7 ngày
 - **Token Storage**: Refresh token được lưu trong database
-- **Token Rotation**: Refresh token được thay đổi khi đăng nhập lại (bao gồm cả đăng nhập Google). Khi đăng nhập Google, hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới, đảm bảo mỗi user chỉ có 1 refresh token hợp lệ.
+- **Token Rotation**: Refresh token được thay đổi khi đăng nhập lại (bao gồm cả đăng nhập Google và Facebook). Khi đăng nhập bằng OAuth2 (Google/Facebook), hệ thống sẽ xóa refresh token cũ của user (nếu có) và tạo refresh token mới, đảm bảo mỗi user chỉ có 1 refresh token hợp lệ.
 
 ### Error Handling
 Hệ thống trả về thông báo lỗi chi tiết bằng tiếng Việt:
@@ -219,6 +241,8 @@ src/main/java/com/example/security/
 ├── service/                  # Business Logic
 │   ├── AuthenticationService.java
 │   ├── JwtService.java
+│   ├── GoogleAuthService.java
+│   ├── FacebookAuthService.java
 │   └── ScheduledTasks.java
 ├── model/                    # Entity Models
 │   ├── User.java
@@ -230,9 +254,13 @@ src/main/java/com/example/security/
 │   ├── request/              # Request DTOs
 │   │   ├── AuthenticationRequest.java
 │   │   ├── RegisterRequest.java
-│   │   └── RefreshTokenRequest.java
+│   │   ├── RefreshTokenRequest.java
+│   │   ├── GoogleAuthRequest.java
+│   │   └── FacebookAuthRequest.java
 │   └── response/             # Response DTOs
 │       ├── AuthenticationResponse.java
+│       ├── GoogleUserInfo.java
+│       ├── FacebookUserInfo.java
 │       └── ErrorResponse.java
 ├── config/                   # Configuration
 │   ├── SecurityConfiguration.java
@@ -251,10 +279,10 @@ src/main/java/com/example/security/
 
 ## 🔄 Luồng hoạt động
 
-### 1. Đăng ký/Đăng nhập/Đăng nhập Google
-1. User gửi credentials hoặc Google ID token
+### 1. Đăng ký/Đăng nhập/Đăng nhập OAuth2 (Google/Facebook)
+1. User gửi credentials, Google ID token, hoặc Facebook access token
 2. Server xác thực và tạo access token + refresh token
-3. Nếu là đăng nhập lại (bao gồm Google), refresh token cũ sẽ bị xóa khỏi database, chỉ giữ lại refresh token mới nhất
+3. Nếu là đăng nhập lại (bao gồm OAuth2), refresh token cũ sẽ bị xóa khỏi database, chỉ giữ lại refresh token mới nhất
 4. Server trả về cả 2 token
 
 ### 2. Sử dụng API
@@ -301,11 +329,39 @@ curl -X POST http://localhost:8080/api/v1/auth/authenticate \
   }'
 ```
 
-#### 3. Truy cập API được bảo vệ
+#### 3. Đăng nhập bằng Google
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/google \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idToken": "<Google_ID_Token>"
+  }'
+```
+
+#### 4. Đăng nhập bằng Facebook
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/facebook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accessToken": "<Facebook_Access_Token>"
+  }'
+```
+
+#### 5. Truy cập API được bảo vệ
 ```bash
 curl -X GET http://localhost:8080/api/v1/demo-controller \
   -H "Authorization: Bearer <access_token>"
 ```
+
+### Test với HTML Pages
+
+Dự án bao gồm các trang HTML để test đăng nhập:
+
+#### 1. Test đăng nhập Google
+Mở file `google-signin-test.html` trong trình duyệt để test đăng nhập Google.
+
+#### 2. Test đăng nhập Facebook
+Mở file `facebook-signin-test.html` trong trình duyệt để test đăng nhập Facebook.
 
 ## 📝 Cấu hình
 
@@ -332,21 +388,34 @@ google.oauth2.client-id=YOUR_GOOGLE_CLIENT_ID
 google.oauth2.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 google.oauth2.redirect-uri=http://localhost:8080/api/v1/auth/google/callback
 
+# Facebook OAuth2 Configuration
+facebook.oauth2.app-id=YOUR_FACEBOOK_APP_ID
+facebook.oauth2.app-secret=YOUR_FACEBOOK_APP_SECRET
+facebook.oauth2.redirect-uri=http://localhost:8080/api/v1/auth/facebook/callback
+
 # Token expiration time
 token.access-token-expiration=90000 # 15 phút
 token.refresh-token-expiration=60480000 # 7 ngày
 ```
 
 **Lưu ý bảo mật:**
-- KHÔNG commit `google.oauth2.client-secret` hoặc thông tin nhạy cảm lên git.
+- KHÔNG commit `google.oauth2.client-secret`, `facebook.oauth2.app-secret` hoặc thông tin nhạy cảm lên git.
 - Nên thêm `src/main/resources/application.properties` vào `.gitignore`.
 - Khi deploy, sử dụng biến môi trường hoặc file cấu hình riêng cho secret.
 
 ### 2. Cấu hình biến môi trường (tùy chọn)
 Bạn có thể truyền các giá trị nhạy cảm qua biến môi trường khi chạy ứng dụng:
 ```sh
-mvn spring-boot:run -Dspring-boot.run.arguments="--google.oauth2.client-secret=YOUR_SECRET"
+mvn spring-boot:run -Dspring-boot.run.arguments="--google.oauth2.client-secret=YOUR_SECRET --facebook.oauth2.app-secret=YOUR_SECRET"
 ```
 
-### 3. Tạo file cấu hình local (không commit)
+### 3. Cấu hình Facebook App
+Để sử dụng đăng nhập Facebook, bạn cần:
+1. Tạo Facebook App tại [Facebook Developers](https://developers.facebook.com/)
+2. Thêm Facebook Login product vào app
+3. Cấu hình Valid OAuth Redirect URIs trong Facebook Login Settings
+4. Thêm App Domains (localhost, 127.0.0.1) trong Basic Settings
+5. Cập nhật App ID và App Secret vào `application.properties`
+
+### 4. Tạo file cấu hình local (không commit)
 Tạo file `application-local.properties` (không commit lên git) để lưu thông tin nhạy cảm khi phát triển local.
