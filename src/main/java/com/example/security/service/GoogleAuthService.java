@@ -184,7 +184,7 @@ public class GoogleAuthService {
                 .profilePicture(googleUserInfo.getProfilePicture())
                 .emailVerified(googleUserInfo.isEmailVerified())
                 .provider("GOOGLE")
-                .role(Role.BRAND)
+                .role(Role.USER)
                 .build();
         
         return userRepository.save(newUser);

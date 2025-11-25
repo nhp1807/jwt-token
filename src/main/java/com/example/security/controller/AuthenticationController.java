@@ -4,9 +4,11 @@ import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RefreshTokenRequest;
 import com.example.security.dto.request.RegisterRequest;
 import com.example.security.dto.request.GoogleAuthRequest;
+import com.example.security.dto.request.FacebookAuthRequest;
 import com.example.security.dto.response.AuthenticationResponse;
 import com.example.security.service.AuthenticationService;
 import com.example.security.service.GoogleAuthService;
+import com.example.security.service.FacebookAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,9 @@ public class AuthenticationController {
     
     @Autowired
     private GoogleAuthService googleAuthService;
+    
+    @Autowired
+    private FacebookAuthService facebookAuthService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
@@ -40,6 +45,14 @@ public class AuthenticationController {
             @RequestBody GoogleAuthRequest request
     ) {
         AuthenticationResponse response = googleAuthService.authenticateWithGoogle(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/facebook")
+    public ResponseEntity<AuthenticationResponse> authenticateWithFacebook(
+            @RequestBody FacebookAuthRequest request
+    ) {
+        AuthenticationResponse response = facebookAuthService.authenticateWithFacebook(request);
         return ResponseEntity.ok(response);
     }
 

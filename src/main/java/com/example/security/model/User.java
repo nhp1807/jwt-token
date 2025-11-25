@@ -30,7 +30,9 @@ public class User implements UserDetails {
     
     // Google OAuth2 fields
     private String googleId;
-    private String provider; // "GOOGLE" or "LOCAL"
+    // Facebook OAuth2 fields
+    private String facebookId;
+    private String provider; // "GOOGLE", "FACEBOOK" or "LOCAL"
     private String profilePicture;
     private boolean emailVerified;
     
